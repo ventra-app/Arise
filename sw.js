@@ -1,5 +1,5 @@
 /* Arise — offline */
-const V = "arise-v2";
+const V = "arise-v3";
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(["./", "./index.html"])).then(() => self.skipWaiting()));
 });
