@@ -2854,10 +2854,10 @@ function SimFlow({ g, theme, unit, onDone, onBack }) {
 function AriseLogo({ size = 90, color = "currentColor" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill={color} aria-label="Arise">
-      <path d="M12 86 L44 16 L64 54 L55 54 L44 33 L27 86 Z" />
-      <path d="M58 86 L70 86 L89 42 L79 40 Z" />
-      <path d="M18 80 L70 32 L76 39 L25 86 Z" />
-      <path d="M66 14 L93 21 L83 45 Z" />
+      <path d="M6 92 L40 8 L58 92 Z" />
+      <path d="M68 89 L58 48 L88 89 Z" />
+      <path d="M14 76 L70 14 L76 22 L22 84 Z" />
+      <path d="M68 17 L97 2 L80 33 Z" />
     </svg>
   );
 }
