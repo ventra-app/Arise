@@ -1,7 +1,12 @@
 {
   "name": "Arise",
   "short_name": "Arise",
+  "description": "لعبة تفاعلية للتحضير لاختبار القدرات — من الصفر إلى أرامكو",
+  "lang": "ar",
+  "dir": "rtl",
+  "orientation": "portrait",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0F5147",
   "theme_color": "#0F5147",

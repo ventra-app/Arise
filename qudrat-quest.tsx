@@ -671,6 +671,86 @@ QQ.registerGenerators([
       ex: `180 − ${a} − ${b} = ${c}°.`, steps: [`مجموع زوايا المثلث = 180°`, `180 − ${a} − ${b} = ${c}°`],
       hints: ["مجموع زوايا أي مثلث ثابت"] }; } },
 
+{ id: "geo-pyth-hyp", topic: "geometry", diff: 2, skill: "نظرية فيثاغورس", est: 50,
+  gen: (R) => { const triples = [[3,4,5],[6,8,10],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[20,21,29]];
+    const [a, b, c] = R.pick(triples), k = R.pick([1,1,1,2,2,3]);
+    const A = a*k, B = b*k, C = c*k;
+    const w1 = A+B, w2 = Math.max(A,B), w3 = C+2;
+    if (new Set([C,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A right triangle has legs ${A} and ${B}. The hypotenuse is:`, correct: C,
+      wrongs: [{ v: w1, why: "جمعت الضلعين مباشرة — فيثاغورس فيه تربيع وجذر لا جمع." },
+               { v: w2, why: "الوتر أطول من كل ضلع قائم على حدة، لا يساوي أطولهما." },
+               { v: w3, why: "خطأ حسابي بسيط في استخراج الجذر التربيعي." }],
+      ex: `${A}² + ${B}² = ${A*A+B*B} = ${C}² → الوتر = ${C}.`,
+      steps: [`مربع الوتر = ${A}² + ${B}² = ${A*A} + ${B*B} = ${A*A+B*B}`, `الجذر التربيعي لـ${A*A+B*B} = ${C}`],
+      hints: ["الوتر هو الضلع الأطول، المقابل للزاوية القائمة", "مربع الوتر = مجموع مربعي الضلعين الآخرين"] }; } },
+
+{ id: "geo-tri-area", topic: "geometry", diff: 1, skill: "مساحة المثلث", est: 40,
+  gen: (R) => { const b = R.pick([4,6,8,10,12,14,16,20]), h = R.i(3,12);
+    const area = (b*h)/2; if (!Number.isInteger(area)) return null;
+    const w1 = b*h, w2 = R.fmt(b*h/4), w3 = 2*(b+h);
+    if (new Set([area,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A triangle has base ${b} and height ${h}. Its area is:`, correct: area,
+      wrongs: [{ v: w1, why: "ضربت القاعدة في الارتفاع بلا قسمة على 2 — هذي مساحة المستطيل لا المثلث." },
+               { v: w2, why: "قسمت على 4 بدل 2." },
+               { v: w3, why: "حسبت محيط الشكل لا مساحته." }],
+      ex: `المساحة = (${b} × ${h}) ÷ 2 = ${area}.`,
+      steps: [`مساحة المثلث = (القاعدة × الارتفاع) ÷ 2`, `= (${b} × ${h}) ÷ 2 = ${area}`],
+      hints: ["نصف حاصل ضرب القاعدة في الارتفاع"] }; } },
+
+{ id: "geo-parallelogram", topic: "geometry", diff: 1, skill: "مساحة متوازي الأضلاع", est: 35,
+  gen: (R) => { const b = R.i(4,20), h = R.i(3,15);
+    const area = b*h;
+    const w1 = R.fmt(area/2), w2 = 2*(b+h), w3 = b+h;
+    if (new Set([area,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A parallelogram has base ${b} and height ${h}. Its area is:`, correct: area,
+      wrongs: [{ v: w1, why: "قسمت على 2 — هذي مساحة المثلث لا متوازي الأضلاع." },
+               { v: w2, why: "هذا المحيط لا المساحة." },
+               { v: w3, why: "جمعت البعدين بدل الضرب." }],
+      ex: `المساحة = ${b} × ${h} = ${area}.`,
+      steps: [`مساحة متوازي الأضلاع = القاعدة × الارتفاع`, `= ${b} × ${h} = ${area}`],
+      hints: ["نفس فكرة المستطيل: قاعدة × ارتفاع"] }; } },
+
+{ id: "geo-box-vol", topic: "geometry", diff: 2, skill: "حجم متوازي المستطيلات", est: 45,
+  gen: (R) => { const l = R.i(2,12), w = R.i(2,10), h = R.i(2,8);
+    const vol = l*w*h;
+    const w1 = 2*(l*w+l*h+w*h), w2 = l*w, w3 = l+w+h;
+    if (new Set([vol,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A rectangular box has length ${l}, width ${w}, and height ${h}. Its volume is:`, correct: vol,
+      wrongs: [{ v: w1, why: "هذي المساحة الكلية للسطوح (مساحة السطح)، لا الحجم." },
+               { v: w2, why: "ضربت بُعدين فقط ونسيت الارتفاع." },
+               { v: w3, why: "جمعت الأبعاد بدل ضربها." }],
+      ex: `الحجم = ${l} × ${w} × ${h} = ${vol}.`,
+      steps: [`حجم متوازي المستطيلات = الطول × العرض × الارتفاع`, `= ${l} × ${w} × ${h} = ${vol}`],
+      hints: ["اضرب الأبعاد الثلاثة معًا"] }; } },
+
+{ id: "geo-cube", topic: "geometry", diff: 2, skill: "المكعب", est: 40,
+  gen: (R) => { const s = R.i(2,12), wantVol = R.bool();
+    const vol = s*s*s, surf = 6*s*s;
+    const correct = wantVol ? vol : surf;
+    const w1 = wantVol ? surf : vol, w2 = s*s, w3 = wantVol ? s*s*s*2 : surf/2;
+    if (new Set([correct,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A cube has side ${s}. Its ${wantVol ? "volume" : "surface area"} is:`, correct,
+      wrongs: [{ v: w1, why: wantVol ? "هذي مساحة السطح (6×الضلع²) لا الحجم (الضلع³)." : "هذا الحجم (الضلع³) لا مساحة السطح (6×الضلع²)." },
+               { v: w2, why: "حسبت مساحة وجه واحد فقط." },
+               { v: w3, why: "ضاعفت/نصّفت بالخطأ." }],
+      ex: wantVol ? `الحجم = ${s}³ = ${vol}.` : `مساحة السطح = 6 × ${s}² = ${surf}.`,
+      steps: wantVol ? [`حجم المكعب = الضلع³`, `= ${s}³ = ${vol}`] : [`مساحة السطح = 6 أوجه متطابقة`, `= 6 × ${s}² = ${surf}`],
+      hints: [wantVol ? "الضلع مضروب في نفسه 3 مرات" : "6 أوجه متساوية"] }; } },
+
+{ id: "geo-cylinder", topic: "geometry", diff: 3, skill: "حجم الأسطوانة", est: 55,
+  gen: (R) => { const r = R.pick([2,3,4,5,7]), h = R.pick([5,7,10,14,20]);
+    const vol = R.fmt(3.14*r*r*h);
+    const w1 = R.fmt(2*3.14*r*h), w2 = r*r*h, w3 = R.fmt(3.14*r*h);
+    if (new Set([vol,w1,w2,w3].map(String)).size < 4) return null;
+    return { q: `A cylinder has radius ${r} and height ${h}. Its volume is (π ≈ 3.14):`, correct: vol,
+      wrongs: [{ v: w1, why: "هذي المساحة الجانبية (2πrh) لا الحجم." },
+               { v: w2, why: "نسيت الضرب في π." },
+               { v: w3, why: "نسيت تربيع نصف القطر." }],
+      ex: `الحجم = πr²h = 3.14 × ${r}² × ${h} = ${vol}.`,
+      steps: [`حجم الأسطوانة = π × (نصف القطر)² × الارتفاع`, `= 3.14 × ${r*r} × ${h}`, `= ${vol}`],
+      hints: ["الحجم فيه تربيع نصف القطر ثم ضرب بالارتفاع"] }; } },
+
 /* ── المتتابعات والمنطق العددي ── */
 { id: "seq-arith", topic: "data", diff: 1, skill: "متتابعة حسابية", est: 40,
   gen: (R) => { const s = R.i(2,12), d = R.pick([3,4,5,6,7,8]);
@@ -788,6 +868,22 @@ QQ.registerGenerators([
     return { q: area ? `Square with side ${s} → Area =` : `Square with side ${s} → Perimeter =`, a: area ? s*s : 4*s,
       ex: area ? `${s}² = ${s*s}.` : `4 × ${s} = ${4*s}.`,
       steps: area ? [`المساحة = الضلع²`, `= ${s*s}`] : [`المحيط = 4 × الضلع`, `= ${4*s}`], hints: [area ? "الضلع في نفسه" : "أربعة أضلاع متساوية"] }; } },
+{ id: "num-geo-pyth", topic: "geometry", diff: 2, skill: "نظرية فيثاغورس", est: 40, type: "num",
+  gen: (R) => { const triples = [[3,4,5],[6,8,10],[5,12,13],[8,15,17],[7,24,25],[9,12,15],[20,21,29]];
+    const [a, b, c] = R.pick(triples), k = R.pick([1,1,2,2,3]);
+    const A = a*k, B = b*k, C = c*k;
+    return { q: `Right triangle legs ${A} and ${B} → Hypotenuse =`, a: C,
+      ex: `${A}² + ${B}² = ${A*A+B*B} = ${C}².`,
+      steps: [`مربع الوتر = ${A}² + ${B}²`, `= ${A*A+B*B}`, `الجذر التربيعي = ${C}`], hints: ["فيثاغورس: تربيع الضلعين ثم الجذر"] }; } },
+{ id: "num-geo-tri-area", topic: "geometry", diff: 1, skill: "مساحة المثلث", est: 35, type: "num",
+  gen: (R) => { const b = R.pick([4,6,8,10,12,14,16,20]), h = R.i(3,12);
+    const area = (b*h)/2; if (!Number.isInteger(area)) return null;
+    return { q: `Triangle base ${b}, height ${h} → Area =`, a: area,
+      ex: `(${b} × ${h}) ÷ 2 = ${area}.`, steps: [`(القاعدة × الارتفاع) ÷ 2`, `= ${area}`], hints: ["نصف حاصل الضرب"] }; } },
+{ id: "num-geo-box-vol", topic: "geometry", diff: 2, skill: "حجم متوازي المستطيلات", est: 40, type: "num",
+  gen: (R) => { const l = R.i(2,12), w = R.i(2,10), h = R.i(2,8);
+    return { q: `Box ${l} × ${w} × ${h} → Volume =`, a: l*w*h,
+      ex: `${l} × ${w} × ${h} = ${l*w*h}.`, steps: [`الحجم = طول × عرض × ارتفاع`, `= ${l*w*h}`], hints: ["اضرب الأبعاد الثلاثة"] }; } },
 { id: "num-seq", topic: "data", diff: 2, skill: "إكمال النمط", est: 40, type: "num",
   gen: (R) => { const s = R.i(2,15), kind = R.pick(["add","mul","grow"]);
     if (kind === "add") { const d = R.pick([4,6,7,8,9,11,12]); const t = [s, s+d, s+2*d, s+3*d];
