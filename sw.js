@@ -1,6 +1,6 @@
 /* Arise — Service Worker (أوفلاين كامل) */
-const V = "arise-v7";
-const CORE = ["./", "./index.html"];
+const V = "arise-v8";
+const CORE = ["./", "./index.html", "./manifest.json", "./icon-511.png", "./apple-touch-icon.png"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
 });
