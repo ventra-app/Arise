@@ -622,6 +622,66 @@ QQ.registerGenerators([
       steps: [`المعدل في الساعة = ${rate*t1} ÷ ${t1} = ${rate}`, `× ${t2} ساعات = ${rate*t2}`],
       hints: ["أوجد إنتاج الساعة الواحدة أولًا"] }; } },
 
+/* ── أنماط كمية إضافية على غرار القدرات ── */
+{ id: "pct-of-pct", topic: "arithmetic", diff: 3, skill: "نسبة من نسبة", est: 55,
+  gen: (R) => { const p1 = R.pick([10,20,25,50]), p2 = R.pick([20,40,50,60,80]), base = R.pick([200,300,400,500,600,800]);
+    const ans = base * p1 / 100 * p2 / 100; if (!Number.isInteger(ans)) return null;
+    const w1 = base * (p1 + p2) / 100, w2 = base * p1 / 100, w3 = R.fmt(base * (p1 * p2 / 100) / 100 * 2);
+    if (new Set([ans, w1, w2, w3].map(String)).size < 4) return null;
+    return { q: `${p1}% of ${p2}% of ${base} =`, correct: ans,
+      wrongs: [{ v: w1, why: "جمعت النسبتين بدل ضربهما على التوالي." },
+               { v: w2, why: `حسبت ${p1}% من ${base} فقط ونسيت الـ${p2}%.` },
+               { v: w3, why: "ضاعفت الناتج بلا سبب." }],
+      ex: `${p2}% من ${base} = ${base * p2 / 100}، ثم ${p1}% منها = ${ans}.`,
+      steps: [`${p2}% × ${base} = ${base * p2 / 100}`, `${p1}% × ${base * p2 / 100} = ${ans}`],
+      hints: ["طبّق النسبة الأولى ثم الثانية بالتتابع، لا بالجمع"] }; } },
+
+{ id: "ratio-3part", topic: "arithmetic", diff: 2, skill: "تقسيم بنسبة ثلاثية", est: 50,
+  gen: (R) => { const [a, b, c] = R.pick([[1,2,3],[2,3,5],[1,3,4],[2,4,5],[1,2,4],[3,4,5],[1,4,6],[2,3,4],[1,2,5]]);
+    const unit = R.pick([10,12,15,20,25]), tot = (a + b + c) * unit, big = Math.max(a, b, c) * unit;
+    const w1 = R.fmt(tot / 3), w2 = Math.min(a, b, c) * unit, w3 = tot - big;
+    if (new Set([big, w1, w2, w3].map(String)).size < 4) return null;
+    return { q: `${tot} is divided in the ratio ${a}:${b}:${c}. The largest share is:`, correct: big,
+      wrongs: [{ v: w1, why: "قسمت بالتساوي على 3 وتجاهلت النسبة." },
+               { v: w2, why: "هذي الحصة الأصغر لا الأكبر." },
+               { v: w3, why: "هذا مجموع الحصتين الأخريين." }],
+      ex: `الأجزاء = ${a}+${b}+${c} = ${a + b + c}، والجزء = ${tot} ÷ ${a + b + c} = ${unit} → الأكبر = ${Math.max(a, b, c)} × ${unit} = ${big}.`,
+      steps: [`مجموع الأجزاء = ${a + b + c}`, `قيمة الجزء = ${tot} ÷ ${a + b + c} = ${unit}`, `الأكبر = ${Math.max(a, b, c)} × ${unit} = ${big}`],
+      hints: ["اجمع أجزاء النسبة ثم اقسم الإجمالي عليها"] }; } },
+
+{ id: "avg-combine", topic: "arithmetic", diff: 3, skill: "المتوسط المرجّح", est: 55,
+  gen: (R) => { const [n1, a1, n2, a2, ans] = R.pick([[20,10,10,25,15],[15,10,5,18,12],[10,15,20,30,25],[20,15,10,30,20],[10,18,20,12,14],[30,10,10,30,15],[10,10,30,18,16],[5,20,15,12,14]]);
+    const w1 = (a1 + a2) / 2, w2 = a2, w3 = a1;
+    if (new Set([ans, w1, w2, w3].map(String)).size < 4) return null;
+    return { q: `A group of ${n1} has average ${a1}; another of ${n2} has average ${a2}. The combined average is:`, correct: ans,
+      wrongs: [{ v: w1, why: "أخذت متوسط المتوسطين وتجاهلت أحجام المجموعتين." },
+               { v: w2, why: "هذا متوسط المجموعة الثانية فقط." },
+               { v: w3, why: "هذا متوسط المجموعة الأولى فقط." }],
+      ex: `المجموع الكلي = ${n1}×${a1} + ${n2}×${a2} = ${n1 * a1 + n2 * a2}، ÷ العدد الكلي ${n1 + n2} = ${ans}.`,
+      steps: [`مجموع الأولى = ${n1 * a1}`, `مجموع الثانية = ${n2 * a2}`, `الكل ÷ ${n1 + n2} = ${ans}`],
+      hints: ["المتوسط المرجّح: اجمع القيم الكلية ثم اقسم على العدد الكلي، لا تتوسط المتوسطات"] }; } },
+
+{ id: "work-rate", topic: "arithmetic", diff: 3, skill: "معدل العمل المشترك", est: 55,
+  gen: (R) => { const pairs = [[6,3,2],[4,4,2],[6,12,4],[10,15,6],[12,4,3],[8,8,4],[3,6,2],[20,5,4]];
+    const [x, y, ans] = R.pick(pairs);
+    const w1 = x + y, w2 = R.fmt((x + y) / 2), w3 = Math.abs(x - y);
+    if (new Set([ans, w1, w2, w3].map(String)).size < 4) return null;
+    return { q: `A finishes a job in ${x} hours, B in ${y} hours. Working together, they finish in:`, correct: ans + " hours",
+      wrongs: [{ v: w1 + " hours", why: "جمعت الزمنين — العمل المشترك أسرع من كليهما." },
+               { v: w2 + " hours", why: "أخذت متوسط الزمنين، وهذا غير صحيح لمعدلات العمل." },
+               { v: w3 + " hours", why: "طرحت الزمنين بلا معنى." }],
+      ex: `معدل مشترك = 1/${x} + 1/${y}؛ الزمن = 1 ÷ المعدل = ${ans} ساعة.`,
+      steps: [`في الساعة: A ينجز 1/${x}، B ينجز 1/${y}`, `معًا = 1/${x} + 1/${y}`, `الزمن = مقلوب المعدل = ${ans} ساعة`],
+      hints: ["اجمع معدلات الإنجاز في الساعة، لا الأزمنة", "الزمن المشترك = 1 ÷ مجموع المعدلات"] }; } },
+
+{ id: "remainder", topic: "arithmetic", diff: 2, skill: "باقي القسمة", est: 40, type: "num",
+  gen: (R) => { const d = R.pick([3,4,5,6,7,9]), q = R.i(4,20), r = R.i(1, d - 1);
+    const n = d * q + r;
+    return { q: `What is the remainder when ${n} is divided by ${d}?`, a: r,
+      ex: `${n} = ${d}×${q} + ${r}، فالباقي ${r}.`,
+      steps: [`أكبر مضاعف لـ${d} أقل من ${n} هو ${d * q}`, `${n} − ${d * q} = ${r}`],
+      hints: ["اطرح أكبر مضاعف للقاسم لا يتجاوز العدد"] }; } },
+
 /* ── الهندسة ── */
 { id: "geo-rect", topic: "geometry", diff: 1, skill: "محيط ومساحة", est: 35,
   gen: (R) => { const w = R.i(3,15), h = R.i(3,15), wantArea = R.bool();
@@ -954,6 +1014,34 @@ const FRAMES = [
   { q: "The company reduced prices in order to ___ more customers.", a: "attract", w: [["avoid","التخفيض لا يهدف للتجنب."],["ignore","يناقض الغاية التجارية."],["charge","التخفيض عكس زيادة الرسوم."]], sig: "in order to", ex: "in order to = غاية: التخفيض يجذب." },
 ];
 
+/* الكلمة الشاذة (الارتباط والاختلاف): ثلاث كلمات من فئة + كلمة دخيلة */
+const ODD = [
+  { grp: ["rose", "tulip", "lily"], odd: "oak", cat: "أزهار", oddCat: "شجرة", ex: "الثلاثة أزهار، بينما oak شجرة." },
+  { grp: ["copper", "silver", "iron"], odd: "marble", cat: "معادن", oddCat: "حجر", ex: "الثلاثة معادن، وmarble حجر." },
+  { grp: ["mango", "apple", "grape"], odd: "carrot", cat: "فواكه", oddCat: "خضار", ex: "الثلاثة فواكه، وcarrot خضار." },
+  { grp: ["eagle", "sparrow", "owl"], odd: "bat", cat: "طيور", oddCat: "ثديي", ex: "الثلاثة طيور، وbat ثديي يطير." },
+  { grp: ["hammer", "drill", "saw"], odd: "timber", cat: "أدوات", oddCat: "مادة خام", ex: "الثلاثة أدوات، وtimber خشب (مادة)." },
+  { grp: ["doctor", "teacher", "engineer"], odd: "hospital", cat: "مهن", oddCat: "مكان", ex: "الثلاثة مهن، وhospital مكان." },
+  { grp: ["water", "oil", "milk"], odd: "oxygen", cat: "سوائل", oddCat: "غاز", ex: "الثلاثة سوائل، وoxygen غاز." },
+  { grp: ["square", "circle", "triangle"], odd: "cube", cat: "أشكال مستوية", oddCat: "مجسم", ex: "الثلاثة أشكال ثنائية، وcube مجسم." },
+  { grp: ["hour", "minute", "second"], odd: "meter", cat: "وحدات زمن", oddCat: "وحدة طول", ex: "الثلاثة وحدات زمن، وmeter وحدة طول." },
+  { grp: ["Mars", "Venus", "Jupiter"], odd: "Moon", cat: "كواكب", oddCat: "قمر", ex: "الثلاثة كواكب، وMoon قمر تابع." },
+  { grp: ["anger", "joy", "fear"], odd: "running", cat: "مشاعر", oddCat: "فعل حركي", ex: "الثلاثة مشاعر، وrunning فعل حركي." },
+  { grp: ["cotton", "wool", "silk"], odd: "plastic", cat: "أقمشة طبيعية", oddCat: "مادة صناعية", ex: "الثلاثة أقمشة طبيعية، وplastic صناعي." },
+];
+
+/* الخطأ السياقي: جملة فيها كلمة واحدة تكسر المعنى — bad هو موضعها */
+const CTX = [
+  { q: "The loyal dog protected its owner but attacked him with great affection.", options: ["loyal", "protected", "attacked", "affection"], bad: 2, ex: "«attacked» يناقض الولاء والحماية والمودة في الجملة." },
+  { q: "She studied hard, prepared well, and carelessly passed the difficult exam.", options: ["studied", "prepared", "carelessly", "passed"], bad: 2, ex: "«carelessly» يناقض الاجتهاد والاستعداد." },
+  { q: "The fresh fruit tasted sweet, juicy, and rotten at the same time.", options: ["fresh", "sweet", "juicy", "rotten"], bad: 3, ex: "«rotten» يناقض «fresh» وبقية الأوصاف." },
+  { q: "The generous man donated money, helped the poor, and stole from the charity.", options: ["generous", "donated", "helped", "stole"], bad: 3, ex: "«stole» يناقض الكرم والعطاء والمساعدة." },
+  { q: "The bright sun gave us warmth, light, and darkness throughout the day.", options: ["bright", "warmth", "light", "darkness"], bad: 3, ex: "«darkness» يناقض سطوع الشمس والضوء." },
+  { q: "The skilled surgeon worked calmly, precisely, and clumsily during the operation.", options: ["skilled", "calmly", "precisely", "clumsily"], bad: 3, ex: "«clumsily» يناقض المهارة والدقة." },
+  { q: "The ancient castle looked old, historic, and newly-built to the visitors.", options: ["ancient", "old", "historic", "newly-built"], bad: 3, ex: "«newly-built» يناقض «ancient» و«old»." },
+  { q: "The honest judge ruled fairly, wisely, and dishonestly in the case.", options: ["honest", "fairly", "wisely", "dishonestly"], bad: 3, ex: "«dishonestly» يناقض النزاهة والعدل والحكمة." },
+];
+
 QQ.registerGenerators([
 
 /* ── التناظر اللفظي من قاعدة العلاقات ── */
@@ -996,6 +1084,24 @@ QQ.registerGenerators([
     return { q: f.q, correct: f.a, wrongs: f.w.map(([v, why]) => ({ v, why })), ex: f.ex,
       steps: [`حدّد كلمة الإشارة: «${f.sig}»`, `هل تطلب تضادًا أم سببًا أم نتيجة؟`, `اختر ما يوافقها: ${f.a}`],
       hints: [`ركّز على كلمة «${f.sig}»`, "الإشارة تحدد اتجاه المعنى"] }; } },
+
+/* ── الكلمة الشاذة (الارتباط والاختلاف) ── */
+{ id: "v-odd", topic: "vocab", diff: 2, skill: "الكلمة الشاذة", est: 35,
+  gen: (R) => { const e = R.pick(ODD);
+    return { q: "اختر الكلمة الشاذّة (التي لا تنتمي للمجموعة):", correct: e.odd,
+      wrongs: e.grp.map(w => ({ v: w, why: `${w} تنتمي لفئة «${e.cat}» مثل الكلمتين الأخريين.` })),
+      ex: e.ex,
+      steps: [`ابحث عن الرابط المشترك بين ثلاث كلمات: «${e.cat}»`, `الكلمة التي تخرج عن الفئة: ${e.odd} (${e.oddCat})`],
+      hints: ["حدّد الفئة التي تجمع ثلاث كلمات", "الكلمة الرابعة هي الشاذّة"] }; } },
+
+/* ── الخطأ السياقي ── */
+{ id: "v-ctxerr", topic: "sentence", diff: 3, skill: "الخطأ السياقي", est: 45,
+  gen: (R) => { const e = R.pick(CTX); const bad = e.options[e.bad];
+    return { q: `أي كلمة تكسر معنى الجملة؟\n«${e.q}»`, correct: bad,
+      wrongs: e.options.filter((_, i) => i !== e.bad).map(w => ({ v: w, why: `«${w}» تناسب سياق الجملة، فهي ليست الخطأ.` })),
+      ex: e.ex,
+      steps: [`اقرأ الجملة كاملة وتحسّس الكلمة التي تناقض بقيتها`, `الكلمة الخاطئة سياقيًا: «${bad}»`],
+      hints: ["الكلمة الخاطئة تناقض المعنى العام للجملة", "بقية الكلمات منسجمة مع بعضها"] }; } },
 
 /* ── إكمال الجمل من كلمات AWL التي تعلّمها اللاعب ── */
 { id: "v-awl-blank", topic: "sentence", diff: 2, skill: "AWL في سياق", est: 40,
