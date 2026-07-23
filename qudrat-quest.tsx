@@ -3047,6 +3047,174 @@ function SimFlow({ g, theme, unit, onDone, onBack }) {
   );
 }
 
+/* ═══════════════ 🎯 محاكاة اختبار كاملة بأقسام مؤقتة ═══════════════ */
+const MOCK_SECS = [
+  { key: "verbal", name: "القسم اللفظي", icon: "📖", topics: ["analogy", "sentence", "reading", "vocab"], n: 10, time: 480 },
+  { key: "quant", name: "القسم الكمي", icon: "🔢", topics: ["arithmetic", "algebra", "geometry", "comparison", "data"], n: 10, time: 540 },
+];
+const fmtClock = (s) => { s = Math.max(0, s); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+
+function MockExam({ g, theme, close, onDone }) {
+  const [phase, setPhase] = useState("intro");   // intro | run | brk | report
+  const [secIdx, setSecIdx] = useState(0);
+  const [qs, setQs] = useState([]);
+  const [qi, setQi] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(MOCK_SECS[0].time);
+  const [logs, setLogs] = useState([]);
+  const sec = MOCK_SECS[secIdx];
+
+  const loadSection = (idx) => {
+    const s = MOCK_SECS[idx];
+    const picked = bankPick({ topics: s.topics, n: s.n, diffs: [1, 2, 3] }).filter(x => x.type === "mcq").map(x => ({ ...x, sec: x.topic }));
+    setQs(picked); setQi(0); setTimeLeft(s.time);
+  };
+  const startSection = (idx) => { loadSection(idx); setSecIdx(idx); setPhase("run"); play("boss"); };
+
+  const goNext = () => { if (secIdx + 1 < MOCK_SECS.length) setPhase("brk"); else { setPhase("report"); play("win"); } };
+
+  useEffect(() => {
+    if (phase !== "run") return;
+    const t = setInterval(() => setTimeLeft(x => x - 1), 1000);
+    return () => clearInterval(t);
+  }, [phase, secIdx]);
+  useEffect(() => {
+    if (phase === "run" && timeLeft <= 0) {
+      setLogs(prev => [...prev, ...qs.slice(qi).map(q => ({ sec: q.sec, section: sec.key, ok: false, wrong: mistakeRec(q, -1, "mcq") }))]);
+      goNext();
+    }
+  }, [timeLeft]);
+
+  const answer = (idx) => {
+    const q = qs[qi];
+    const ok = idx === q.a;
+    play("click");
+    const entry = { sec: q.sec, section: sec.key, ok, ...(ok ? {} : { wrong: mistakeRec(q, idx, "mcq") }) };
+    setLogs(prev => [...prev, entry]);
+    if (qi + 1 >= qs.length) goNext(); else setQi(qi + 1);
+  };
+
+  if (phase === "intro") return (
+    <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: theme.bg, color: theme.text, width: "min(100%,560px)", borderRadius: 18, padding: 20, animation: "pop .3s ease" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 44 }}>🎯</div>
+          <div style={{ fontWeight: 900, fontSize: 18, margin: "4px 0" }}>محاكاة اختبار كاملة</div>
+          <div style={{ fontSize: 13, color: theme.sub, lineHeight: 1.9, margin: "6px 0 12px" }}>
+            قسمان كما في القدرات الحقيقي: <b>لفظي</b> ثم <b>كمي</b>. لكل قسم <b>مؤقّت واحد للقسم كامله</b> — وزّع وقتك بنفسك. لن تظهر الإجابات إلا في التقرير النهائي، والأسئلة التي تخطئها تُحفظ في 📕 دفتر أخطائك.
+          </div>
+          {MOCK_SECS.map(s => (
+            <div key={s.key} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "6px 0", padding: "9px 12px" }}>
+              <span style={{ fontWeight: 800, fontSize: 13.5 }}>{s.icon} {s.name}</span>
+              <span style={{ fontSize: 12.5, color: theme.sub }}>{s.n} سؤال • ⏱ {fmtClock(s.time)}</span>
+            </div>
+          ))}
+          <button className="btn" style={{ width: "100%", padding: 14, fontSize: 16, marginTop: 8, background: "#B3402F" }} onClick={() => startSection(0)}>🎬 ابدأ المحاكاة</button>
+          <button className="btn ghost" style={{ width: "100%", padding: 10, marginTop: 8 }} onClick={close}>إغلاق</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (phase === "brk") return (
+    <div style={{ position: "fixed", inset: 0, background: "#0F5147", color: "#fff", zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", animation: "pop .3s ease" }}>
+      <div style={{ fontSize: 44 }}>✅</div>
+      <div style={{ fontWeight: 900, fontSize: 18, margin: "8px 0" }}>انتهى {MOCK_SECS[secIdx].name}</div>
+      <div style={{ fontSize: 14, opacity: .85, marginBottom: 20, lineHeight: 1.9 }}>خذ نفسًا… القسم التالي: <b>{MOCK_SECS[secIdx + 1].name}</b><br />{MOCK_SECS[secIdx + 1].n} سؤال • ⏱ {fmtClock(MOCK_SECS[secIdx + 1].time)}</div>
+      <button className="btn" style={{ padding: "13px 30px", fontSize: 16, background: "#fff", color: "#0F5147" }} onClick={() => startSection(secIdx + 1)}>ابدأ {MOCK_SECS[secIdx + 1].name} ←</button>
+    </div>
+  );
+
+  if (phase === "report") {
+    const correct = logs.filter(x => x.ok).length;
+    const acc = logs.length ? correct / logs.length : 0;
+    const score = Math.min(100, Math.round(55 + acc * 45));
+    const secScore = (key) => { const L = logs.filter(x => x.section === key); const c = L.filter(x => x.ok).length; return L.length ? Math.round((c / L.length) * 100) : 0; };
+    const bySec = {};
+    logs.forEach(({ sec, ok }) => { bySec[sec] ||= { a: 0, c: 0 }; bySec[sec].a++; if (ok) bySec[sec].c++; });
+    const rows = Object.entries(bySec).sort((a, b) => (a[1].c / a[1].a) - (b[1].c / b[1].a));
+    const weak = rows.filter(([, v]) => v.c / v.a < 0.7).slice(0, 2);
+    return (
+      <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background: theme.bg, color: theme.text, width: "min(100%,620px)", maxHeight: "88vh", overflowY: "auto", borderRadius: "22px 22px 0 0", padding: "18px 16px 30px", animation: "drop .3s ease" }}>
+          <div className="card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: theme.sub }}>📋 تقرير المحاكاة الكاملة</div>
+            <div style={{ fontSize: 46, fontWeight: 900, color: score >= 90 ? "#C89235" : "#0F5147", margin: "2px 0" }}>{score}</div>
+            <div style={{ fontSize: 13, color: theme.sub }}>درجة تقديرية • {correct}/{logs.length} صحيحة</div>
+            {g.mockBest && <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 3 }}>أفضل نتيجة سابقة: {g.mockBest.score}</div>}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {MOCK_SECS.map(s => (
+              <div key={s.key} className="card" style={{ flex: 1, textAlign: "center", margin: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: theme.sub }}>{s.icon} {s.name}</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: secScore(s.key) >= 70 ? "#1F7A5C" : "#B3402F" }}>{secScore(s.key)}%</div>
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <div style={{ fontWeight: 900, fontSize: 13.5, marginBottom: 8 }}>أداؤك حسب القسم:</div>
+            {rows.map(([s, v]) => {
+              const p = Math.round((v.c / v.a) * 100);
+              return (
+                <div key={s} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, minWidth: 96 }}>{SEC_AR[s] || s}</span>
+                  <div style={{ flex: 1, background: theme.line, borderRadius: 99, height: 8, overflow: "hidden" }}>
+                    <div style={{ width: `${p}%`, height: "100%", borderRadius: 99, background: p >= 80 ? "#1F7A5C" : p >= 60 ? "#C89235" : "#B3402F" }} />
+                  </div>
+                  <span style={{ fontSize: 11.5, fontWeight: 900, minWidth: 34, textAlign: "left" }}>{p}%</span>
+                </div>
+              );
+            })}
+          </div>
+          {weak.length > 0 && <div className="card" style={{ background: "#B3402F0d", borderColor: "#B3402F33" }}>
+            <div style={{ fontWeight: 900, fontSize: 13.5, marginBottom: 6 }}>🦉 ركّز على:</div>
+            {weak.map(([s]) => <div key={s} style={{ fontSize: 13, lineHeight: 1.9, marginBottom: 6 }}><b>{SEC_AR[s]}:</b> {TIP_FIX[s]}</div>)}
+          </div>}
+          <div style={{ fontSize: 12, color: theme.sub, textAlign: "center", margin: "4px 0 10px" }}>📕 أسئلتك الخاطئة حُفظت في دفتر الأخطاء للمراجعة</div>
+          <button className="btn gold" style={{ width: "100%", padding: 13 }} onClick={() => { onDone({ score, verbal: secScore("verbal"), quant: secScore("quant"), acc, log: logs }); close(); }}>اعتمد النتيجة وأغلق ←</button>
+        </div>
+      </div>
+    );
+  }
+
+  // phase === "run"
+  const q = qs[qi];
+  if (!q) return null;
+  const low = timeLeft <= 30;
+  return (
+    <div style={{ position: "fixed", inset: 0, background: theme.bg, color: theme.text, zIndex: 60, overflowY: "auto", padding: "16px 16px 30px" }}>
+      <div style={{ maxWidth: 620, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 900 }}>{sec.icon} {sec.name}</span>
+          <span className={low ? "tpulse" : ""} style={{ fontWeight: 900, fontSize: 16, color: low ? "#B3402F" : theme.text, direction: "ltr" }}>⏱ {fmtClock(timeLeft)}</span>
+        </div>
+        <div style={{ background: theme.line, borderRadius: 99, height: 6, marginBottom: 4, overflow: "hidden" }}>
+          <div style={{ width: `${(timeLeft / sec.time) * 100}%`, height: "100%", background: low ? "#B3402F" : "#C89235", borderRadius: 99, transition: "width 1s linear" }} />
+        </div>
+        <div style={{ fontSize: 12, color: theme.sub, marginBottom: 10, fontWeight: 800 }}>سؤال {qi + 1} من {qs.length} • القسم {secIdx + 1}/{MOCK_SECS.length}</div>
+        <div className="card">
+          <div style={{ fontSize: 11, fontWeight: 900, color: "#C89235", marginBottom: 8 }}>{SEC_AR[q.sec] || q.sec}</div>
+          <div dir="auto" style={{ fontSize: 15.5, fontWeight: 600, lineHeight: 1.8, marginBottom: 12, whiteSpace: "pre-line" }}>{q.q}</div>
+          {q.options.map((o, idx) => (
+            <button key={idx} className="opt" style={{ textAlign: "start" }} onClick={() => answer(idx)}>{String.fromCharCode(65 + idx)}. {o}</button>
+          ))}
+        </div>
+        <button className="btn ghost" style={{ width: "100%", padding: 10, marginTop: 4 }} onClick={() => answer(-1)}>تخطّي هذا السؤال ←</button>
+      </div>
+    </div>
+  );
+}
+
+function applyMockDone(n, res, fx = FX_NULL) {
+  if (!n.mockBest || res.score > n.mockBest.score) n.mockBest = { score: res.score, verbal: res.verbal, quant: res.quant };
+  res.log.forEach(({ sec, ok, wrong }) => {
+    n.stats.answered++; if (ok) n.stats.correct++;
+    n.stats.bySec[sec] ||= { a: 0, c: 0, t: 0, to: 0 };
+    const v = n.stats.bySec[sec]; v.a++; if (ok) v.c++;
+    if (wrong) addMistake(n, wrong, n.day);
+  });
+  fx.toast(`🎯 محاكاة كاملة: ${res.score}`);
+}
+
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -3782,6 +3950,7 @@ const newSave = () => ({
   acad: { units: {}, placed: null, simBest: null, opened: {} },
   srs: {},
   mistakes: [],
+  mockBest: null,
   mem: { study: 0, work: 0, rest: 0, perfects: 0, lost: {}, comeback: {}, gatFirst: null, gatImproved: null, lastComeback: null },
 });
 
@@ -4281,12 +4450,14 @@ function App() {
       {panel === "road" && <RoadPanel g={g} theme={theme} close={() => setPanel(null)} goAcad={() => setView({ s: "acad" })} />}
       {panel === "journal" && <Journal g={g} theme={theme} close={() => setPanel(null)}
         clearMistake={(id) => mut(n => { n.mistakes = (n.mistakes || []).filter(m => m.id !== id); })} />}
-      {panel && panel !== "journal" && <Panel g={g} theme={theme} panel={panel} spFree={spFree} close={() => setPanel(null)}
+      {panel === "mock" && <MockExam g={g} theme={theme} close={() => setPanel(null)}
+        onDone={(res) => mut(n => applyMockDone(n, res, FX))} />}
+      {panel && panel !== "journal" && panel !== "mock" && <Panel g={g} theme={theme} panel={panel} spFree={spFree} close={() => setPanel(null)}
         buySkill={(sk) => mut(n => { n.skills.push(sk.id); if (n.skills.length >= 3) grant(n, "skills3"); })}
         buyItem={(it) => mut(n => { n.coins -= (n.dayFlags?.sale ? Math.ceil(it.price / 2) : it.price); n.items[it.id]++; })}
         buyAvatar={(av) => mut(n => { n.coins -= av.price; n.owned.push(av.id); n.avatar = av.id; })}
         wearAvatar={(av) => mut(n => { n.avatar = av.id; })} toast={toast}
-        onExport={doExport} onImport={doImport} />}
+        onExport={doExport} onImport={doImport} onOpenMock={() => setPanel("mock")} />}
     </div>
   );
 }
@@ -4890,7 +5061,7 @@ function BackupBox({ theme, onExport, onImport }) {
   );
 }
 
-function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, wearAvatar, toast, onExport, onImport }) {
+function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, wearAvatar, toast, onExport, onImport, onOpenMock }) {
   const priceOf = (p) => (g.dayFlags?.sale ? Math.ceil(p / 2) : p);
   return (
     <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -4967,6 +5138,13 @@ function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, w
         </div>}
 
         {panel === "stats" && <StatsPanel g={g} theme={theme} />}
+        {panel === "stats" && (
+          <div className="card" style={{ textAlign: "center", background: "#B3402F0d", borderColor: "#B3402F33" }}>
+            <div style={{ fontWeight: 900, fontSize: 14, marginBottom: 3 }}>🎯 محاكاة اختبار كاملة</div>
+            <div style={{ fontSize: 12, color: theme.sub, lineHeight: 1.8, marginBottom: 10 }}>قسمان مؤقّتان (لفظي + كمي) كما في القدرات الحقيقي، مع تقرير مفصّل.{g.mockBest ? ` أفضل نتيجة: ${g.mockBest.score}` : ""}</div>
+            <button className="btn" style={{ width: "100%", padding: 12, background: "#B3402F" }} onClick={() => { play("click"); onOpenMock(); }}>ابدأ المحاكاة الكاملة</button>
+          </div>
+        )}
         {panel === "stats" && <BackupBox theme={theme} onExport={onExport} onImport={onImport} />}
       </div>
     </div>
