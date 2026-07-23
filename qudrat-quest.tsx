@@ -3951,6 +3951,7 @@ const newSave = () => ({
   srs: {},
   mistakes: [],
   mockBest: null,
+  examDate: null,
   mem: { study: 0, work: 0, rest: 0, perfects: 0, lost: {}, comeback: {}, gatFirst: null, gatImproved: null, lastComeback: null },
 });
 
@@ -4457,7 +4458,8 @@ function App() {
         buyItem={(it) => mut(n => { n.coins -= (n.dayFlags?.sale ? Math.ceil(it.price / 2) : it.price); n.items[it.id]++; })}
         buyAvatar={(av) => mut(n => { n.coins -= av.price; n.owned.push(av.id); n.avatar = av.id; })}
         wearAvatar={(av) => mut(n => { n.avatar = av.id; })} toast={toast}
-        onExport={doExport} onImport={doImport} onOpenMock={() => setPanel("mock")} />}
+        onExport={doExport} onImport={doImport} onOpenMock={() => setPanel("mock")}
+        onSetDate={(v) => mut(n => { n.examDate = v || null; })} />}
     </div>
   );
 }
@@ -5025,6 +5027,43 @@ function Ending({ g, theme, onReplay, onFree }) {
 
 /* ═══════════════ 🗂 PANELS ═══════════════ */
 
+function StudyPlanCard({ g, theme, onSetDate }) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const exam = g.examDate ? new Date(g.examDate + "T00:00:00") : null;
+  const daysLeft = exam ? Math.max(0, Math.round((exam - today) / 86400000)) : null;
+  const secs = ALL_SECS.filter(s => secStat(g, s).a > 0);
+  const weak = [...secs].sort((a, b) => weightOf(g, b) - weightOf(g, a)).slice(0, 2);
+  const due = (dueList(g) || []).length;
+  return (
+    <div className="card" style={{ background: "#0F51470d", borderColor: "#0F514733" }}>
+      <div style={{ fontWeight: 900, fontSize: 14, marginBottom: 6 }}>📅 خطة المذاكرة والعدّاد</div>
+      {!g.examDate ? (
+        <>
+          <div style={{ fontSize: 12.5, color: theme.sub, lineHeight: 1.9, marginBottom: 10 }}>حدّد تاريخ اختبارك، وسيبني لك التطبيق خطة يومية تركّز على أقسامك الأضعف مع عدّاد تنازلي محفّز.</div>
+          <input type="date" onChange={e => e.target.value && onSetDate(e.target.value)}
+            style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 10, border: `1px solid ${theme.line}`, background: theme.bg, color: theme.text, fontSize: 14, fontFamily: "inherit" }} />
+        </>
+      ) : (
+        <>
+          <div style={{ textAlign: "center", margin: "2px 0 10px" }}>
+            <div style={{ fontSize: 42, fontWeight: 900, color: daysLeft <= 7 ? "#B3402F" : "#0F5147", lineHeight: 1.1 }}>{daysLeft}</div>
+            <div style={{ fontSize: 12.5, color: theme.sub }}>{daysLeft === 0 ? "اليوم اختبارك — بالتوفيق! 🍀" : daysLeft === 1 ? "باقٍ يوم واحد على اختبارك" : `باقٍ ${daysLeft} يوم على اختبارك`}</div>
+          </div>
+          <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 5 }}>🎯 خطة اليوم:</div>
+          <ul style={{ margin: 0, paddingInlineStart: 20, fontSize: 12.5, lineHeight: 2 }}>
+            {weak.length ? weak.map(s => <li key={s}>ركّز على <b>{SEC_AR[s]}</b> — 10 أسئلة (من أضعف أقسامك)</li>)
+              : <li>خُض 3 معارك لنكتشف أقسامك الأضعف ونبني خطتك</li>}
+            {due > 0 && <li>أنجز <b>{due}</b> {due === 1 ? "مراجعة مستحقّة" : "مراجعات مستحقّة"} في الأكاديمية</li>}
+            <li>{daysLeft <= 14 ? "محاكاة كاملة كل يومين لضبط الإيقاع" : "محاكاة كاملة مرة كل أسبوع"}</li>
+            {(g.mistakes || []).length > 0 && <li>راجع <b>{g.mistakes.length}</b> من دفتر أخطائك 📕</li>}
+          </ul>
+          <button className="btn ghost" style={{ width: "100%", padding: 9, marginTop: 10, fontSize: 12.5 }} onClick={() => onSetDate("")}>تغيير/إزالة التاريخ</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function BackupBox({ theme, onExport, onImport }) {
   const [code, setCode] = useState("");
   const [open, setOpen] = useState(false);
@@ -5061,7 +5100,7 @@ function BackupBox({ theme, onExport, onImport }) {
   );
 }
 
-function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, wearAvatar, toast, onExport, onImport, onOpenMock }) {
+function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, wearAvatar, toast, onExport, onImport, onOpenMock, onSetDate }) {
   const priceOf = (p) => (g.dayFlags?.sale ? Math.ceil(p / 2) : p);
   return (
     <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -5138,6 +5177,7 @@ function Panel({ g, theme, panel, spFree, close, buySkill, buyItem, buyAvatar, w
         </div>}
 
         {panel === "stats" && <StatsPanel g={g} theme={theme} />}
+        {panel === "stats" && <StudyPlanCard g={g} theme={theme} onSetDate={onSetDate} />}
         {panel === "stats" && (
           <div className="card" style={{ textAlign: "center", background: "#B3402F0d", borderColor: "#B3402F33" }}>
             <div style={{ fontWeight: 900, fontSize: 14, marginBottom: 3 }}>🎯 محاكاة اختبار كاملة</div>
