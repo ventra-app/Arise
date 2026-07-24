@@ -96,10 +96,12 @@ const QQ = {
   registerQuestions(list, defaults = {}) { list.forEach(q => this._rich.push({ ...defaults, ...q })); },
   registerLessons(p) { Object.assign(this._lessons, p); },
   registerAWL(id, data) { this._awl[id] = data; },
-  _gens: [], _blue: {}, _unitGen: {},
+  _gens: [], _blue: {}, _unitGen: {}, _passages: [],
   registerGenerators(list) { this._gens.push(...list); },
   registerBlueprint(id, slots) { this._blue[id] = slots; },
   registerUnitGen(map) { Object.assign(this._unitGen, map); },
+  /* 📖 بنك قطع الاستيعاب — أضف قطعًا فقط عبر registerPassages دون لمس المحرّك */
+  registerPassages(list) { this._passages.push(...list); },
   manifest() {
     const words = Object.values(this._awl).reduce((a,s)=>a+s.packs.reduce((x,p)=>x+p.words.length,0),0);
     return { mcq: this._core.mcq.length, num: this._core.num.length, rich: this._rich.length, gens: this._gens.length,
@@ -1733,9 +1735,6 @@ QQ.registerCore({
   { sec: "sentence", q: "The two studies reached ______ conclusions; one supported the theory while the other rejected it.", options: ["similar", "identical", "contradictory", "expected"], a: 2, ex: "دراسة تؤيد وأخرى ترفض = متناقضة." },
   { sec: "sentence", q: "Because the evidence was ______, the committee postponed its decision until more data arrived.", options: ["conclusive", "insufficient", "abundant", "convincing"], a: 1, ex: "أجّلوا وطلبوا بيانات = الأدلة غير كافية." },
   { sec: "sentence", q: "Despite his ______ schedule, he always finds time to help his colleagues.", options: ["empty", "flexible", "demanding", "boring"], a: 2, ex: "Despite = تضاد: جدول مُرهق لكنه يساعد." },
-  { sec: "reading", q: "\"Camels are adapted to desert life. Their humps store fat, not water, converted to energy when food is scarce. Wide padded feet prevent sinking into sand. A camel can lose 25% of its body water — fatal to most mammals.\"\n\nThe main purpose of the passage is to:", options: ["compare camels with other mammals", "describe camel adaptations to the desert", "explain why deserts are dangerous", "argue camels need protection"], a: 1, ex: "كل الجمل تخدم فكرة التكيّف؛ المقارنة تفصيلة داعمة." },
-  { sec: "reading", q: "(Same passage)\nA camel's hump stores:", options: ["water", "fat", "sand", "moisture only"], a: 1, ex: "نص صريح: fat, not water — انتبه لفخ الماء." },
-  { sec: "reading", q: "(Same passage)\nLosing 25% of body water would cause most mammals to:", options: ["adapt quickly", "store more fat", "die", "sleep longer"], a: 2, ex: "fatal = مميت؛ استنتاج مباشر." },
   { sec: "arithmetic", q: "What is 15% of 240?", options: ["24", "30", "36", "48"], a: 2, ex: "10% = 24، و5% = 12 → 36." },
   { sec: "arithmetic", q: "A shirt costs 80 SAR after a 20% discount. Original price?", options: ["96", "100", "104", "120"], a: 1, ex: "80 = 80% من الأصل → 80 ÷ 0.8 = 100." },
   { sec: "arithmetic", q: "Average of 12, 18, 24, 30?", options: ["20", "21", "22", "24"], a: 1, ex: "متتابعة بفرق ثابت: (12+30)÷2 = 21." },
@@ -1839,141 +1838,124 @@ QQ.registerQuestions([
 /* ═══ content/questions-reading.js ═══ */
 /* ═══ استيعاب المقروء — نصوص مؤلَّفة (المولّد لا يصلح للقراءة) ═══
    للتوسع: أضف نصًا جديدًا بنفس الشكل، وكل أسئلته تدخل البنك تلقائيًا. */
-QQ.registerQuestions([
-/* ١ — أرامكو والبئر رقم ٧ */
-{ topic: "reading", diff: 2, skill: "التقاط التفاصيل", est: 60, type: "mcq",
-  q: "«After five years of failed attempts, engineers nearly abandoned the project. In 1938, Dammam Well No. 7 finally produced oil in commercial quantities, transforming the region's economy within a single decade.»\n\nAccording to the passage, the well succeeded:",
-  options: ["immediately after drilling began", "after years of unsuccessful attempts", "before 1930", "without any engineering effort"], a: 1,
-  ex: "النص يقول «after five years of failed attempts» — النجاح جاء بعد إخفاقات.",
-  steps: ["ابحث عن الكلمة المفتاحية failed", "«خمس سنوات من المحاولات الفاشلة» تسبق النجاح", "الخيار الثاني إعادة صياغة لها"],
-  hints: ["ابحث عن كلمة تدل على الفشل قبل النجاح"], traps: { 0: "immediately يناقض «بعد خمس سنوات»." } },
-{ topic: "reading", diff: 2, skill: "الاستنتاج", est: 60, type: "mcq",
-  q: "Same passage. The word «transforming» suggests that the discovery:",
-  options: ["had a small effect", "caused major change", "was kept secret", "delayed development"], a: 1,
-  ex: "transform = يُحدث تحولًا جذريًا، ويؤكده «within a single decade».",
-  steps: ["transform تعني التحويل الجذري", "قرينة الجملة: خلال عقد واحد فقط"],
-  hints: ["ما معنى transform؟"], traps: { 0: "small effect يناقض قوة الفعل transform." } },
-{ topic: "reading", diff: 3, skill: "نبرة الكاتب", est: 60, type: "mcq",
-  q: "Same passage. The writer's attitude toward the engineers is best described as:",
-  options: ["dismissive", "appreciative", "hostile", "indifferent"], a: 1,
-  ex: "ذكر مثابرتهم رغم الفشل ثم التحول الكبير = نبرة تقدير.",
-  steps: ["ابحث عن كلمات محمّلة عاطفيًا: nearly abandoned, finally, transforming", "الصورة العامة: مثابرة أثمرت", "= تقدير"],
-  hints: ["هل يمدح النص المهندسين أم ينتقدهم؟"], traps: { 3: "indifferent لا تناسب نصًا يبرز التحول الكبير." } },
+/* ═══════════════════════════════════════════════════════════
+   📖 بنك قطع الاستيعاب (Reading Comprehension)
+   قطع أصلية بمستويات (1 سهل • 2 متوسط • 3 صعب)، ولكل قطعة عدة
+   أسئلة مؤلَّفة من نفس النص (فكرة رئيسية/استنتاج/معنى من السياق/
+   عنوان/مرجع الضمير/تفصيل/نبرة). يُختار النص والسؤال عشوائيًا فتقل
+   نسبة التكرار. للتوسّع لاحقًا: أضِف قطعًا عبر QQ.registerPassages فقط.
+   ═══════════════════════════════════════════════════════════ */
+QQ.registerPassages([
+  /* ── مستوى 1: سهل ── */
+  { id: "rd-camel", level: 1, text: "Camels are adapted to desert life. Their humps store fat, not water, which is converted to energy when food is scarce. Wide padded feet prevent them from sinking into the sand. A camel can lose 25% of its body water — a loss that would be fatal to most other mammals.", questions: [
+    { type: "main", q: "The main purpose of the passage is to:", options: ["compare camels with other mammals", "describe how camels are adapted to the desert", "explain why deserts are dangerous", "argue that camels need protection"], a: 1, ex: "كل الجمل تخدم فكرة التكيّف؛ المقارنة تفصيلة داعمة لا الفكرة الرئيسية." },
+    { type: "detail", q: "According to the passage, a camel's hump stores:", options: ["water", "fat", "sand", "moisture only"], a: 1, ex: "نص صريح: «store fat, not water» — انتبه لفخ الماء." },
+    { type: "infer", q: "Losing 25% of body water would cause most other mammals to:", options: ["adapt quickly", "store more fat", "die", "sleep longer"], a: 2, ex: "«fatal to most other mammals» = مميت؛ استنتاج مباشر." },
+    { type: "pronoun", q: "In the last sentence, the word «that» refers to:", options: ["the camel", "the desert", "losing 25% of body water", "the padded feet"], a: 2, ex: "«that» تعود على الحدث السابق: فقدان 25% من ماء الجسم." },
+  ]},
+  { id: "rd-bees", level: 1, text: "The honeybee is one of nature's most important workers. As it moves from flower to flower collecting nectar, it also carries pollen with it, helping plants to produce fruit and seeds. Without this quiet service, many of the crops we depend on would slowly disappear.", questions: [
+    { type: "main", q: "The passage is mainly about:", options: ["how bees make honey", "the importance of bees to plants", "why flowers need water", "the life span of a bee"], a: 1, ex: "المحور: خدمة النحل للنباتات عبر نقل حبوب اللقاح." },
+    { type: "detail", q: "According to the passage, bees carry pollen while they:", options: ["build their hives", "collect nectar", "rest at night", "feed their young"], a: 1, ex: "نص صريح: «As it moves … collecting nectar, it also carries pollen»." },
+    { type: "pronoun", q: "The phrase «this quiet service» refers to:", options: ["making honey", "carrying pollen between flowers", "living in hives", "producing seeds"], a: 1, ex: "«this quiet service» تشير للخدمة الموصوفة قبلها: نقل حبوب اللقاح." },
+    { type: "title", q: "The best title for the passage is:", options: ["How Honey Is Made", "The Honeybee's Hidden Job", "Dangerous Insects", "The History of Farming"], a: 1, ex: "العنوان يلخّص الفكرة: دور النحل الخفيّ في مساعدة النبات." },
+    { type: "vocab", q: "The word «disappear» most nearly means:", options: ["grow", "vanish", "multiply", "return"], a: 1, ex: "disappear = يختفي/يزول، عكس البقاء." },
+  ]},
+  { id: "rd-recycle", level: 1, text: "Recycling turns used materials into new products. When we recycle paper, we save trees and reduce the amount of waste sent to landfills. On their own these choices seem small, but repeated by millions of people every day, they add up to a very large effect.", questions: [
+    { type: "main", q: "The main idea of the passage is that recycling:", options: ["is too expensive", "brings a large benefit when many people do it", "only helps paper factories", "should be done once a year"], a: 1, ex: "الفكرة: أثر كبير يتراكم من خيارات صغيرة يكررها الملايين." },
+    { type: "detail", q: "According to the passage, recycling paper helps to:", options: ["create landfills", "save trees", "make water cleaner", "lower food prices"], a: 1, ex: "نص صريح: «we save trees»." },
+    { type: "infer", q: "The phrase «they add up to a very large effect» suggests that:", options: ["one person cannot help", "small actions matter when combined", "recycling harms the environment", "trees are unimportant"], a: 1, ex: "«add up» = تتراكم؛ مجموع الأفعال الصغيرة أثر كبير." },
+    { type: "vocab", q: "The word «landfills» refers to places where:", options: ["trees are planted", "waste is dumped", "paper is sold", "water is stored"], a: 1, ex: "landfills = مكبّات النفايات (قرينتها «waste sent to»)." },
+  ]},
 
-/* ٢ — النوم والذاكرة */
-{ topic: "reading", diff: 2, skill: "الفكرة الرئيسية", est: 60, type: "mcq",
-  q: "«Students who sleep seven hours before an exam recall more than those who study all night. Sleep does not merely rest the brain; it consolidates what was learned during the day.»\n\nThe main idea is:",
-  options: ["studying all night is best", "sleep strengthens memory", "exams are unfair", "seven hours is too much"], a: 1,
-  ex: "consolidates = يثبّت المتعلَّم؛ الفكرة أن النوم يقوّي الذاكرة.",
-  steps: ["الجملة الأخيرة تحمل الفكرة عادة", "«يثبّت ما تعلمته» = تقوية الذاكرة"],
-  hints: ["ابدأ من الجملة الأخيرة"], traps: { 0: "النص يقول العكس تمامًا." } },
-{ topic: "reading", diff: 2, skill: "معنى من السياق", est: 55, type: "mcq",
-  q: "Same passage. «consolidates» most nearly means:",
-  options: ["erases", "strengthens", "delays", "measures"], a: 1,
-  ex: "consolidate = يرسّخ ويقوّي — قرينتها التضاد مع «merely rest».",
-  steps: ["السياق: النوم لا يريح فقط بل يفعل شيئًا أقوى", "= يرسّخ"],
-  hints: ["ما الذي يفعله النوم بما تعلمته؟"], traps: { 0: "erases تناقض سياق التحسن." } },
-{ topic: "reading", diff: 3, skill: "ما لا يقوله النص", est: 65, type: "mcq",
-  q: "Same passage. Which statement is NOT supported?",
-  options: ["sleep affects recall", "all-night study is less effective", "sleep has a role beyond rest", "seven hours guarantees a perfect score"], a: 3,
-  ex: "النص يقول «recall more» لا «درجة كاملة مضمونة» — تعميم زائد.",
-  steps: ["افحص كل خيار: هل نصّ عليه النص؟", "«يضمن درجة كاملة» لم يرد إطلاقًا"],
-  hints: ["احذر الخيار المبالغ (يضمن/دائمًا/كل)"], traps: { 0: "هذا مذكور صراحة في أول جملة." } },
+  /* ── مستوى 2: متوسط ── */
+  { id: "rd-aramco", level: 2, text: "After five years of failed attempts, the engineers had nearly abandoned the project. Then, in 1938, Dammam Well No. 7 finally produced oil in commercial quantities, transforming the region's economy within a single decade.", questions: [
+    { type: "detail", q: "According to the passage, the well succeeded:", options: ["immediately after drilling began", "after years of unsuccessful attempts", "before 1930", "without any engineering effort"], a: 1, ex: "النص يقول «after five years of failed attempts» — النجاح جاء بعد إخفاقات." },
+    { type: "infer", q: "The word «transforming» suggests that the discovery:", options: ["had a small effect", "caused major change", "was kept secret", "delayed development"], a: 1, ex: "transform = يُحدث تحولًا جذريًا، ويؤكده «within a single decade»." },
+    { type: "tone", q: "The writer's attitude toward the engineers is best described as:", options: ["dismissive", "appreciative", "hostile", "indifferent"], a: 1, ex: "ذكر مثابرتهم رغم الفشل ثم التحول الكبير = نبرة تقدير." },
+  ]},
+  { id: "rd-sleep", level: 2, text: "Students who sleep seven hours before an exam recall more than those who study all night. Sleep does not merely rest the brain; it consolidates what was learned during the day.", questions: [
+    { type: "main", q: "The main idea of the passage is that:", options: ["studying all night is best", "sleep strengthens memory", "exams are unfair", "seven hours is too much"], a: 1, ex: "consolidates = يثبّت المتعلَّم؛ الفكرة أن النوم يقوّي الذاكرة." },
+    { type: "vocab", q: "The word «consolidates» most nearly means:", options: ["erases", "strengthens", "delays", "measures"], a: 1, ex: "consolidate = يرسّخ ويقوّي — قرينتها التضاد مع «merely rest»." },
+    { type: "not", q: "Which statement is NOT supported by the passage?", options: ["sleep affects recall", "all-night study is less effective", "sleep has a role beyond rest", "seven hours guarantees a perfect score"], a: 3, ex: "النص يقول «recall more» لا «درجة كاملة مضمونة» — تعميم زائد." },
+  ]},
+  { id: "rd-solar", level: 2, text: "Because desert regions receive intense sunlight for most of the year, they are ideal for solar farms. However, dust storms reduce panel efficiency, so frequent cleaning is required.", questions: [
+    { type: "cause", q: "Why is cleaning necessary?", options: ["panels are fragile", "dust lowers efficiency", "sunlight is weak", "storms destroy panels"], a: 1, ex: "النص يربط: dust storms ← reduce efficiency ← so cleaning." },
+    { type: "detail", q: "Desert regions suit solar farms because they have:", options: ["cheap land", "strong sunlight most of the year", "no dust", "cool weather"], a: 1, ex: "«intense sunlight for most of the year» سبب صريح." },
+    { type: "connector", q: "The word «However» signals:", options: ["an added example", "a contrast with the previous idea", "a conclusion", "a repetition"], a: 1, ex: "However تُدخل تضادًا: المكان مثالي… لكن هناك عائق." },
+  ]},
+  { id: "rd-interview", level: 2, text: "Candidates who prepare specific examples of past problems they solved perform better in interviews than those who describe their skills only in general terms.", questions: [
+    { type: "infer", q: "The passage implies that interviewers value:", options: ["long answers", "concrete evidence", "formal clothing", "technical vocabulary"], a: 1, ex: "أمثلة محددة لمشكلات حُلّت = دليل ملموس أفضل من الكلام العام." },
+    { type: "not", q: "Which is NOT stated or implied?", options: ["examples help candidates", "general descriptions are weaker", "preparation matters", "interviews last one hour"], a: 3, ex: "مدة المقابلة لم تُذكر بأي شكل." },
+  ]},
+  { id: "rd-drip", level: 2, text: "Drip irrigation delivers water directly to plant roots, losing far less to evaporation than traditional flooding. Farms that switched reported similar yields while using nearly half the water.", questions: [
+    { type: "main", q: "The passage is mainly about:", options: ["a more efficient irrigation method", "the history of farming", "types of crops", "the cost of water"], a: 0, ex: "المحور: طريقة ريّ توفّر الماء بنفس الإنتاج." },
+    { type: "detail", q: "Compared with flooding, drip irrigation:", options: ["produces far lower yields", "uses about half the water", "requires no equipment", "increases evaporation"], a: 1, ex: "«nearly half the water» مع «similar yields»." },
+  ]},
+  { id: "rd-iot", level: 2, text: "Everyday devices — from watches to refrigerators — are increasingly connected to the internet. They collect data and share it automatically, letting a home adjust its lighting or temperature before the owner even asks. This convenience, however, comes with a cost: the more data these devices gather, the more questions arise about privacy.", questions: [
+    { type: "main", q: "The passage mainly discusses:", options: ["how to repair refrigerators", "connected devices and their trade-off", "the history of the internet", "why watches are popular"], a: 1, ex: "المحور: الأجهزة المتصلة وراحتها مقابل كلفتها في الخصوصية." },
+    { type: "pronoun", q: "In the second sentence, «They» refers to:", options: ["homes", "owners", "everyday connected devices", "privacy questions"], a: 2, ex: "«They» تعود على «Everyday devices … connected to the internet»." },
+    { type: "connector", q: "The word «however» signals that the writer is about to mention:", options: ["another benefit", "a drawback", "an example", "a conclusion"], a: 1, ex: "however تُدخل الجانب السلبي (الكلفة على الخصوصية) بعد ذكر الراحة." },
+    { type: "title", q: "The best title for the passage is:", options: ["Convenience at a Price", "How to Build a Watch", "The End of Privacy", "A Guide to Refrigerators"], a: 0, ex: "العنوان يوازن بين الراحة وكلفتها — جوهر النص." },
+  ]},
+  { id: "rd-coral", level: 2, text: "Coral reefs shelter roughly a quarter of all marine species, yet they cover less than one percent of the ocean floor. When sea temperatures rise, the corals expel the tiny algae that feed them, leaving the reefs pale and weak — a process known as bleaching.", questions: [
+    { type: "detail", q: "According to the passage, coral reefs cover:", options: ["a quarter of the ocean floor", "less than one percent of the ocean floor", "half of the ocean", "most warm seas"], a: 1, ex: "نص صريح: «less than one percent of the ocean floor» (الربع يخص الأنواع لا المساحة)." },
+    { type: "vocab", q: "The word «expel» most nearly means:", options: ["welcome", "push out", "feed", "colour"], a: 1, ex: "expel = يطرد/يُخرج؛ القرينة أن المرجان يفقد الطحالب." },
+    { type: "cause", q: "Bleaching happens because:", options: ["reefs grow too fast", "rising temperatures drive out the algae", "fish eat the coral", "the ocean floor sinks"], a: 1, ex: "سلسلة السبب: ارتفاع الحرارة ← طرد الطحالب ← شحوب وضعف." },
+    { type: "infer", q: "The passage suggests that coral reefs are:", options: ["unimportant to the ocean", "ecologically valuable but fragile", "growing stronger each year", "found only in cold water"], a: 1, ex: "يؤويان ربع الأنواع (قيمة) لكن يتأثران بالحرارة (هشاشة)." },
+  ]},
 
-/* ٣ — الطاقة الشمسية */
-{ topic: "reading", diff: 2, skill: "السبب والنتيجة", est: 60, type: "mcq",
-  q: "«Because desert regions receive intense sunlight for most of the year, they are ideal for solar farms. However, dust storms reduce panel efficiency, so frequent cleaning is required.»\n\nWhy is cleaning necessary?",
-  options: ["panels are fragile", "dust lowers efficiency", "sunlight is weak", "storms destroy panels"], a: 1,
-  ex: "النص يربط: dust storms → reduce efficiency → cleaning.",
-  steps: ["تتبع سلسلة السبب: dust storms ← reduce efficiency ← so cleaning"],
-  hints: ["ابحث عن so وما قبلها"], traps: { 3: "destroy أقوى مما قاله النص (reduce فقط)." } },
-{ topic: "reading", diff: 1, skill: "التقاط التفاصيل", est: 50, type: "mcq",
-  q: "Same passage. Desert regions suit solar farms because they have:",
-  options: ["cheap land", "strong sunlight most of the year", "no dust", "cool weather"], a: 1,
-  ex: "«intense sunlight for most of the year» سبب صريح.",
-  steps: ["الجملة تبدأ بـBecause — السبب بعدها مباشرة"],
-  hints: ["Because تدل على السبب"], traps: { 2: "النص يذكر أن الغبار موجود ويسبب مشكلة." } },
-{ topic: "reading", diff: 3, skill: "وظيفة أداة الربط", est: 60, type: "mcq",
-  q: "Same passage. The word «However» signals:",
-  options: ["an added example", "a contrast with the previous idea", "a conclusion", "a repetition"], a: 1,
-  ex: "However تُدخل تضادًا: المكان مثالي… لكن هناك عائق.",
-  steps: ["ما قبلها: ميزة", "ما بعدها: عيب", "= تضاد"],
-  hints: ["قارن ما قبل الكلمة بما بعدها"], traps: { 2: "الاستنتاج يأتي عادة مع therefore." } },
+  /* ── مستوى 3: صعب ── */
+  { id: "rd-spacing", level: 3, text: "Reviewing material once a week for four weeks produces stronger retention than reviewing it four times in a single day, even though the total study time in both cases is identical.", questions: [
+    { type: "main", q: "The passage emphasizes the importance of:", options: ["total hours studied", "how study is spaced over time", "studying in groups", "reading speed"], a: 1, ex: "نفس الزمن الكلي لكن التوزيع مختلف — العبرة في التباعد." },
+    { type: "detail", q: "Retention was strongest when review happened:", options: ["four times in one day", "once weekly across four weeks", "only before the exam", "twice a year"], a: 1, ex: "النص صريح: مرة أسبوعيًا لأربعة أسابيع أقوى." },
+    { type: "infer", q: "It can be inferred that two students with the same total study time may still differ in results because of:", options: ["their intelligence", "the spacing of their reviews", "the room temperature", "the subject's difficulty"], a: 1, ex: "المتغيّر الوحيد المذكور هو التوزيع الزمني، فهو سبب الفرق." },
+  ]},
+  { id: "rd-smartcity", level: 3, text: "Sensors placed at intersections adjust traffic lights in real time. In the pilot districts, average commute times fell by 18 percent, though residents in areas without sensors noticed no change at all.", questions: [
+    { type: "infer", q: "What can be concluded from the passage?", options: ["the system helps only where it is installed", "the system failed", "all residents benefited", "sensors increase traffic"], a: 0, ex: "التحسن ظهر في مناطق التجربة فقط — أثر محدود بالتغطية." },
+    { type: "detail", q: "Commute times in the pilot districts:", options: ["rose by 18%", "fell by 18%", "stayed the same", "doubled"], a: 1, ex: "«fell by 18 percent» نص صريح." },
+    { type: "vocab", q: "The word «pilot» in «pilot districts» most nearly means:", options: ["final and permanent", "trial or test", "airborne", "crowded"], a: 1, ex: "pilot هنا = تجريبي (مناطق التجربة)، لا طيّار." },
+  ]},
+  { id: "rd-tests", level: 3, text: "Standardized tests measure only a narrow slice of ability. They predict first-year performance reasonably well, yet they say little about creativity or persistence — qualities that employers repeatedly rank as decisive.", questions: [
+    { type: "tone", q: "The writer's view is best described as:", options: ["fully supportive of such tests", "balanced but critical of their limits", "completely opposed to testing", "uninterested in the topic"], a: 1, ex: "اعترف بفائدة (تنبؤ معقول) ثم بيّن قصورًا — نبرة متوازنة ناقدة." },
+    { type: "vocab", q: "The word «decisive» most nearly means:", options: ["unclear", "determining the outcome", "expensive", "optional"], a: 1, ex: "decisive = حاسم يحدد النتيجة؛ لذلك يصنّفها أصحاب العمل كذلك." },
+    { type: "infer", q: "The writer would most likely agree that:", options: ["test scores alone define a candidate", "tests should be one factor among several", "creativity cannot be observed", "first-year grades are meaningless"], a: 1, ex: "يعترف بقيمتها المحدودة ويطالب ضمنًا بمعايير أخرى." },
+  ]},
+  { id: "rd-aimed", level: 3, text: "Artificial intelligence can now scan thousands of medical images in the time a doctor examines a few, flagging patterns the human eye may miss. Yet specialists caution that such tools should assist judgment, not replace it: an algorithm trained on limited data can be confidently wrong, and a patient's history often holds clues that no scan reveals.", questions: [
+    { type: "main", q: "The main point of the passage is that AI in medicine:", options: ["will soon replace all doctors", "is useless for diagnosis", "can help diagnosis but should not replace doctors", "only works on healthy patients"], a: 2, ex: "يوازن: أداة مساعِدة قوية لكن لا تحلّ محل حكم الطبيب." },
+    { type: "infer", q: "The phrase «confidently wrong» suggests that an algorithm can:", options: ["admit it is unsure", "give a wrong answer that appears certain", "never make mistakes", "refuse to answer"], a: 1, ex: "«confidently wrong» = خطأ يبدو واثقًا؛ خطر التقديم بثقة رغم الخطأ." },
+    { type: "tone", q: "The specialists' attitude toward these tools is:", options: ["cautiously supportive", "completely dismissive", "purely enthusiastic", "hostile"], a: 0, ex: "يرون فائدتها لكن يحذّرون من الاعتماد الكامل — دعم بحذر." },
+    { type: "vocab", q: "The word «flagging» most nearly means:", options: ["hiding", "pointing out", "deleting", "slowing down"], a: 1, ex: "flag = يشير إلى/يبرز؛ القرينة «patterns the eye may miss»." },
+  ]},
+  { id: "rd-urban", level: 3, text: "As cities grow, more people gain access to jobs and services, but the countryside is emptied of its young workers. Governments that once encouraged migration to the cities now face a dilemma: the same movement that powers urban economies leaves rural regions struggling to sustain their schools and clinics.", questions: [
+    { type: "main", q: "The passage is mainly about:", options: ["the mixed consequences of urban migration", "how to build larger cities", "why villages are quiet", "the cost of public schools"], a: 0, ex: "يعرض وجهي الهجرة: منفعة للمدن وإفراغ للريف — نتائج مختلطة." },
+    { type: "pronoun", q: "The phrase «the same movement» refers to:", options: ["the growth of clinics", "migration from the countryside to the cities", "the building of schools", "the rise of urban economies"], a: 1, ex: "«the same movement» تعود على الهجرة إلى المدن المذكورة قبلها." },
+    { type: "infer", q: "It can be inferred that the governments' earlier policy is now seen as:", options: ["clearly successful", "no longer simple to defend", "irrelevant to cities", "harmful to urban jobs"], a: 1, ex: "«face a dilemma» يدل أن السياسة السابقة صارت معقّدة لا محسومة." },
+    { type: "vocab", q: "The word «dilemma» most nearly means:", options: ["an easy win", "a difficult choice", "a celebration", "a mistake"], a: 1, ex: "dilemma = معضلة/خيار صعب بين أمرين لكلٍّ ثمن." },
+  ]},
+]);
 
-/* ٤ — التعلّم بالتكرار المتباعد */
-{ topic: "reading", diff: 3, skill: "المقارنة داخل النص", est: 65, type: "mcq",
-  q: "«Reviewing material once a week for four weeks produces stronger retention than reviewing it four times in one day, even though the total study time is identical.»\n\nThe passage emphasizes the importance of:",
-  options: ["total hours studied", "how study is spaced over time", "studying in groups", "reading speed"], a: 1,
-  ex: "نفس الزمن الكلي لكن التوزيع مختلف — العبرة في التباعد.",
-  steps: ["لاحظ «total study time is identical»", "إذن الفرق في التوزيع لا في الكم"],
-  hints: ["ما الشيء المتساوي بين الحالتين؟"], traps: { 0: "النص ينفي أن الساعات الكلية هي الفارق." } },
-{ topic: "reading", diff: 2, skill: "التقاط التفاصيل", est: 55, type: "mcq",
-  q: "Same passage. Retention was strongest when review happened:",
-  options: ["four times in one day", "once weekly across four weeks", "only before the exam", "twice a year"], a: 1,
-  ex: "النص صريح: مرة أسبوعيًا لأربعة أسابيع أقوى.",
-  steps: ["قارن الحالتين المذكورتين", "الأقوى هي الموزّعة"],
-  hints: ["أي الحالتين وُصفت بـstronger؟"] },
-
-/* ٥ — المقابلة الوظيفية */
-{ topic: "reading", diff: 2, skill: "الاستنتاج", est: 60, type: "mcq",
-  q: "«Candidates who prepare specific examples of past problems they solved perform better in interviews than those who describe their skills in general terms.»\n\nThe passage implies that interviewers value:",
-  options: ["long answers", "concrete evidence", "formal clothing", "technical vocabulary"], a: 1,
-  ex: "أمثلة محددة لمشكلات حُلّت = دليل ملموس أفضل من الكلام العام.",
-  steps: ["قارن: specific examples مقابل general terms", "المفضّل: المحدد الملموس"],
-  hints: ["ما الفرق بين المجموعتين؟"], traps: { 0: "الطول لم يُذكر إطلاقًا." } },
-{ topic: "reading", diff: 3, skill: "ما لا يقوله النص", est: 65, type: "mcq",
-  q: "Same passage. Which is NOT stated or implied?",
-  options: ["examples help candidates", "general descriptions are weaker", "preparation matters", "interviews last one hour"], a: 3,
-  ex: "مدة المقابلة لم تُذكر بأي شكل.",
-  steps: ["افحص كل خيار مقابل النص", "المدة معلومة خارجية لا نصية"],
-  hints: ["ابحث عن الخيار الذي يضيف معلومة جديدة"] },
-
-/* ٦ — الماء والزراعة */
-{ topic: "reading", diff: 2, skill: "الفكرة الرئيسية", est: 60, type: "mcq",
-  q: "«Drip irrigation delivers water directly to plant roots, losing far less to evaporation than traditional flooding. Farms that switched reported similar yields using nearly half the water.»\n\nThe passage is mainly about:",
-  options: ["a more efficient irrigation method", "the history of farming", "types of crops", "the cost of water"], a: 0,
-  ex: "المحور: طريقة ريّ توفّر الماء بنفس الإنتاج.",
-  steps: ["ما الذي يتكرر في الجملتين؟ الري والماء والكفاءة", "= طريقة أكفأ"],
-  hints: ["ابحث عن الموضوع المشترك بين الجملتين"], traps: { 3: "التكلفة لم تُذكر، بل كمية الماء." } },
-{ topic: "reading", diff: 2, skill: "المقارنة داخل النص", est: 55, type: "mcq",
-  q: "Same passage. Compared with flooding, drip irrigation:",
-  options: ["produces far lower yields", "uses about half the water", "requires no equipment", "increases evaporation"], a: 1,
-  ex: "«nearly half the water» مع «similar yields».",
-  steps: ["ابحث عن الرقم/النسبة", "نصف الماء تقريبًا"],
-  hints: ["ركّز على الجملة الثانية"], traps: { 0: "النص يقول الإنتاج متشابه لا أقل." } },
-
-/* ٧ — المدن الذكية */
-{ topic: "reading", diff: 3, skill: "الاستنتاج", est: 65, type: "mcq",
-  q: "«Sensors placed at intersections adjust traffic lights in real time. In pilot districts, average commute times fell by 18 percent, though residents in areas without sensors noticed no change.»\n\nWhat can be concluded?",
-  options: ["the system helps only where installed", "the system failed", "all residents benefited", "sensors increase traffic"], a: 0,
-  ex: "التحسن ظهر في مناطق التجربة فقط — أثر محدود بالتغطية.",
-  steps: ["قارن مناطق الحساسات بغيرها", "الفائدة حيث رُكِّبت فقط"],
-  hints: ["ماذا حدث في المناطق بلا حساسات؟"], traps: { 2: "«جميع السكان» يناقض «no change» للبعض." } },
-{ topic: "reading", diff: 2, skill: "التقاط التفاصيل", est: 55, type: "mcq",
-  q: "Same passage. Commute times in pilot districts:",
-  options: ["rose by 18%", "fell by 18%", "stayed the same", "doubled"], a: 1,
-  ex: "«fell by 18 percent» نص صريح.",
-  steps: ["ابحث عن الرقم 18 وما يسبقه"], hints: ["fell = انخفض"] },
-
-/* ٨ — الاختبارات القياسية */
-{ topic: "reading", diff: 3, skill: "نبرة الكاتب", est: 65, type: "mcq",
-  q: "«Standardized tests measure a narrow slice of ability. They predict first-year performance reasonably well, yet they say little about creativity or persistence — qualities employers repeatedly rank as decisive.»\n\nThe writer's view is best described as:",
-  options: ["fully supportive of such tests", "balanced but critical of their limits", "completely opposed to testing", "uninterested in the topic"], a: 1,
-  ex: "اعترف بفائدة (تنبؤ معقول) ثم بيّن قصورًا — نبرة متوازنة ناقدة.",
-  steps: ["الجملة الأولى: قصور", "الثانية: اعتراف بفائدة ثم yet ينقد", "= توازن مع نقد"],
-  hints: ["هل النص يمدح فقط أم يذم فقط أم الاثنان؟"], traps: { 2: "completely opposed يتجاهل اعترافه بالتنبؤ الجيد." } },
-{ topic: "reading", diff: 2, skill: "معنى من السياق", est: 55, type: "mcq",
-  q: "Same passage. «decisive» most nearly means:",
-  options: ["unclear", "determining the outcome", "expensive", "optional"], a: 1,
-  ex: "decisive = حاسم يحدد النتيجة؛ لذلك يصنّفها أصحاب العمل كذلك.",
-  steps: ["السياق: صفات يعتبرها أصحاب العمل الأهم", "= حاسمة"],
-  hints: ["ما الصفة التي تجعل أصحاب العمل يقررون؟"], traps: { 3: "optional عكس الحسم." } },
-{ topic: "reading", diff: 2, skill: "الاستنتاج", est: 60, type: "mcq",
-  q: "Same passage. The writer would most likely agree that:",
-  options: ["test scores alone define a candidate", "tests should be one factor among several", "creativity cannot be observed", "first-year grades are meaningless"], a: 1,
-  ex: "يعترف بقيمتها المحدودة ويطالب ضمنًا بمعايير أخرى.",
-  steps: ["اجمع: مفيدة جزئيًا + تُغفل صفات حاسمة", "= عامل ضمن عوامل"],
-  hints: ["ما الموقف الوسط الذي يوافق النبرة؟"], traps: { 0: "يناقض نقده لضيق ما تقيسه." } },
+/* مولّد الاستيعاب: يختار قطعة عشوائية بمستوى الصعوبة ثم سؤالًا منها،
+   فيظهر النص دائمًا مع سؤاله (لا أسئلة يتيمة بلا قطعة). */
+const READ_SKILL = { main: "الفكرة الرئيسية", detail: "التقاط التفاصيل", infer: "الاستنتاج", vocab: "معنى من السياق", title: "العنوان المناسب", pronoun: "مرجع الضمير", tone: "نبرة الكاتب", cause: "السبب والنتيجة", connector: "وظيفة أداة الربط", not: "ما لا يقوله النص" };
+function readingGen(R, level) {
+  const pool = QQ._passages.filter(p => p.level === level);
+  const src = pool.length ? pool : QQ._passages;
+  if (!src.length) return null;
+  const p = R.pick(src);
+  const qz = R.pick(p.questions);
+  const correct = qz.options[qz.a];
+  return {
+    q: `${p.text}\n\n${qz.q}`, correct,
+    wrongs: qz.options.filter((_, i) => i !== qz.a).map(o => ({ v: o, why: "لا يدعمه النص أو يناقض ما ورد فيه — عُد للنص وابحث عن الدليل." })),
+    ex: qz.ex,
+    steps: ["ارجع إلى النص وابحث عن الجملة الدليل", `نوع السؤال: ${READ_SKILL[qz.type] || "استيعاب"}`, "الإجابة الصحيحة مدعومة نصًّا لا بمعرفة خارجية"],
+    hints: ["كل إجابة صحيحة لها سند في النص — لا تعتمد على معلومة من خارجه", "احذر الخيار الذي يبالغ (كل/دائمًا/يضمن) أو يضيف معلومة جديدة"],
+  };
+}
+QQ.registerGenerators([
+  { id: "v-read-1", topic: "reading", diff: 1, skill: "الاستيعاب", est: 55, gen: (R) => readingGen(R, 1) },
+  { id: "v-read-2", topic: "reading", diff: 2, skill: "الاستيعاب", est: 60, gen: (R) => readingGen(R, 2) },
+  { id: "v-read-3", topic: "reading", diff: 3, skill: "الاستيعاب", est: 65, gen: (R) => readingGen(R, 3) },
 ]);
 
 
@@ -2360,6 +2342,15 @@ function validateContent() {
   ACADEMY.forEach(ph => ph.units.forEach(u => (u.drills || []).forEach((d, i) => {
     if (d.kind !== "num" && (!d.options || d.a >= d.options.length)) issues.push(`درل ${u.id}#${i}`);
   })));
+  QQ._passages.forEach(p => {
+    if (!p.id || !p.text || !Array.isArray(p.questions) || !p.questions.length) { issues.push("قطعة ناقصة: " + (p.id || "?")); return; }
+    p.questions.forEach((q, i) => {
+      if (!q.q || !Array.isArray(q.options) || q.options.length !== 4) issues.push(`قطعة ${p.id}#${i}: خيارات`);
+      else if (typeof q.a !== "number" || q.a < 0 || q.a > 3) issues.push(`قطعة ${p.id}#${i}: إجابة`);
+      else if (new Set(q.options.map(String)).size !== 4) issues.push(`قطعة ${p.id}#${i}: تكرار خيار`);
+      if (!q.ex) issues.push(`قطعة ${p.id}#${i}: بلا شرح`);
+    });
+  });
   if (issues.length) console.warn("⚠️ Content issues:", issues);
   return issues.length;
 }
